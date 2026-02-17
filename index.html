@@ -25,8 +25,9 @@ body{
     border-radius:20px;
     box-shadow:0 10px 25px rgba(0,0,0,0.15);
     width:95%;
-    max-width:420px; /* pehle se zyada wide */
+    max-width:420px;
     text-align:center;
+    position:relative;
 }
 
 /* Heading */
@@ -38,18 +39,20 @@ h1{
 
 /* Slideshow */
 .slideshow{
-    width:100%;
-    height:auto; /* FIX: fixed height hata di */
+    width:90%;
+    max-width:350px;
+    max-height:250px;
     border-radius:15px;
     overflow:hidden;
     background:#f2f2f2;
+    margin:0 auto;
 }
 
 .slideshow img{
     width:100%;
-    height:auto; /* FIX */
-    display:none; /* FIX: absolute hata diya */
-    object-fit:contain;
+    max-height:250px;
+    display:none;
+    object-fit:cover;
 }
 
 .slideshow img.active{
@@ -85,10 +88,25 @@ button{
 
 /* Success video */
 video{
-    width:100%;
-    height:auto;
+    width:90%;
+    max-width:350px;
+    max-height:250px;
     border-radius:15px;
     margin-top:15px;
+    display:block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+/* Confetti Canvas */
+#confettiCanvas{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    z-index:9999;
 }
 
 /* Hidden */
@@ -128,52 +146,168 @@ video{
   <source src="mine.mp4" type="video/mp4">
 </video>
 
+<!-- Confetti Canvas -->
+<canvas id="confettiCanvas"></canvas>
 </div>
 </div>
 
 <script>
-const noBtn=document.getElementById('noBtn');
-const yesBtn=document.getElementById('yesBtn');
-const proposalContent=document.getElementById('proposalContent');
-const successMessage=document.getElementById('successMessage');
+const noBtn = document.getElementById('noBtn');
+const yesBtn = document.getElementById('yesBtn');
+const proposalContent = document.getElementById('proposalContent');
+const successMessage = document.getElementById('successMessage');
 
-/* Better No button movement (screen se bahar nahi jayega) */
-function moveButton(){
-const container=document.querySelector('.container');
-const rect=container.getBoundingClientRect();
+/* --- No Button Behavior --- */
+const noTexts = ["No", "HUH🥱😒"];
 
-const maxX=rect.width-100;
-const maxY=rect.height-50;
+function moveNoButton() {
+    const container = document.querySelector('.container');
+    const rect = container.getBoundingClientRect();
 
-const x=Math.random()*maxX;
-const y=Math.random()*maxY;
+    const maxX = rect.width - 100;
+    const maxY = rect.height - 50;
 
-noBtn.style.position="absolute";
-noBtn.style.left=x+"px";
-noBtn.style.top=y+"px";
+    const x = Math.random() * maxX;
+    const y = Math.random() * maxY;
+
+    noBtn.style.position = "absolute";
+    noBtn.style.left = x + "px";
+    noBtn.style.top = y + "px";
+
+    const randomText = noTexts[Math.floor(Math.random() * noTexts.length)];
+    noBtn.textContent = randomText;
 }
 
-noBtn.addEventListener('mouseover',moveButton);
-noBtn.addEventListener('touchstart',moveButton);
+/* Mouse hover / touch */
+noBtn.addEventListener('mouseover', moveNoButton);
+noBtn.addEventListener('touchstart', moveNoButton);
 
-/* Slideshow */
-const slides=document.querySelectorAll(".slideshow img");
-let index=0;
+/* Auto move + toggle text every 1 sec until Yes clicked */
+let noInterval = setInterval(()=>{
+    if (!proposalContent.classList.contains('hidden')) {
+        moveNoButton();
+    } else {
+        clearInterval(noInterval);
+    }
+}, 1000);
+
+/* --- Slideshow --- */
+const slides = document.querySelectorAll(".slideshow img");
+let index = 0;
 
 setInterval(()=>{
-slides[index].classList.remove("active");
-index=(index+1)%slides.length;
-slides[index].classList.add("active");
+    slides[index].classList.remove("active");
+    index = (index + 1) % slides.length;
+    slides[index].classList.add("active");
 },2000);
 
-/* Yes click */
-yesBtn.addEventListener('click',()=>{
-proposalContent.classList.add('hidden');
-successMessage.classList.remove('hidden');
-document.body.style.background="#ff4d6d";
+/* --- Yes Button Click --- */
+yesBtn.addEventListener('click', ()=>{
+    proposalContent.classList.add('hidden');
+    successMessage.classList.remove('hidden');
+    document.body.style.background="#ff4d6d";
+
+    launchConfettiAndFireworks();
 });
+
+/* --- Confetti + Fireworks --- */
+function launchConfettiAndFireworks(){
+  const canvas = document.getElementById('confettiCanvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  /* Confetti Particles */
+  const confettiParticles = [];
+  for(let i=0;i<200;i++){
+    confettiParticles.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height - canvas.height,
+      r: Math.random()*6 + 4,
+      d: Math.random()*200 + 100,
+      color: `hsl(${Math.random()*360}, 100%, 50%)`,
+      tilt: Math.random()*10 - 10,
+      tiltAngleIncrement: Math.random()*0.07 + 0.05,
+      tiltAngle: 0
+    });
+  }
+
+  /* Fireworks Particles */
+  const fireworks = [];
+  function createFirework(){
+    const x = Math.random()*canvas.width;
+    const y = Math.random()*canvas.height/2;
+    const colors = [`#ff4d6d`, `#ffd700`, `#00ffff`, `#ff69b4`, `#ff8c00`];
+    for(let i=0;i<50;i++){
+      fireworks.push({
+        x: x,
+        y: y,
+        vx: (Math.random()-0.5)*8,
+        vy: (Math.random()-1.5)*8,
+        alpha: 1,
+        color: colors[Math.floor(Math.random()*colors.length)],
+        life: 0
+      });
+    }
+  }
+
+  setInterval(createFirework, 800);
+
+  /* Animation Loop */
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    /* Draw Confetti */
+    confettiParticles.forEach(p => {
+      ctx.beginPath();
+      ctx.lineWidth = p.r/2;
+      ctx.strokeStyle = p.color;
+      ctx.moveTo(p.x + p.tilt + p.r/4, p.y);
+      ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r/4);
+      ctx.stroke();
+
+      p.tiltAngle += p.tiltAngleIncrement;
+      p.y += (Math.cos(p.d) + 3 + p.r/2)/2;
+      p.x += Math.sin(p.d);
+      p.tilt = Math.sin(p.tiltAngle) * 15;
+
+      if(p.y > canvas.height){
+        p.y = -10;
+        p.x = Math.random()*canvas.width;
+      }
+    });
+
+    /* Draw Fireworks */
+    for(let i=fireworks.length-1;i>=0;i--){
+      let f = fireworks[i];
+      ctx.beginPath();
+      ctx.globalAlpha = f.alpha;
+      ctx.fillStyle = f.color;
+      ctx.arc(f.x, f.y, 3, 0, Math.PI*2);
+      ctx.fill();
+
+      f.x += f.vx;
+      f.y += f.vy;
+      f.vy += 0.1;
+      f.alpha -= 0.01;
+      f.life +=1;
+
+      if(f.alpha <=0){
+        fireworks.splice(i,1);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+
+  /* Remove canvas after 12 sec */
+  setTimeout(()=>{canvas.remove();},12000);
+}
 </script>
 
 </body>
 </html>
-

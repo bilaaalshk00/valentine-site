@@ -16,6 +16,8 @@ body{
     min-height:100vh;
     margin:0;
     font-family:'Poppins',sans-serif;
+    overflow: hidden;
+    position: relative;
 }
 
 /* Container */
@@ -28,6 +30,7 @@ body{
     max-width:420px;
     text-align:center;
     position:relative;
+    z-index:10;
 }
 
 /* Heading */
@@ -74,6 +77,8 @@ button{
     border:none;
     border-radius:10px;
     cursor:pointer;
+    position:relative;
+    z-index:11;
 }
 
 #yesBtn{
@@ -106,17 +111,38 @@ video{
     width:100%;
     height:100%;
     pointer-events:none;
-    z-index:9999;
+    z-index:9;
+}
+
+/* Hearts Canvas */
+#heartsCanvas{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    z-index:0;
 }
 
 /* Hidden */
 .hidden{
     display:none;
 }
+
+/* Extra line styling */
+#extraLine{
+    font-size:16px;
+    color:#d63384;
+    margin-top:10px;
+}
 </style>
 </head>
 
 <body>
+
+<!-- Hearts Canvas for background -->
+<canvas id="heartsCanvas"></canvas>
 
 <div class="container">
 
@@ -130,7 +156,7 @@ video{
     <img src="tiddii4.jpg">
 </div>
 
-<h1>Will You Be My Valentine? 💖</h1>
+<h1>Will You Be Mine Tiiddiii Forever? 👉👈😖</h1>
 
 <div class="buttons">
     <button id="yesBtn">Yes</button>
@@ -146,6 +172,8 @@ video{
   <source src="mine.mp4" type="video/mp4">
 </video>
 
+<p id="extraLine">From the Bottom of My Heart, I really really Respect You and Your Uncountable Efforts a lot and I bery bery Lub u TIIDDIII😋.</p>
+
 <!-- Confetti Canvas -->
 <canvas id="confettiCanvas"></canvas>
 </div>
@@ -157,8 +185,15 @@ const yesBtn = document.getElementById('yesBtn');
 const proposalContent = document.getElementById('proposalContent');
 const successMessage = document.getElementById('successMessage');
 
+let noClicked = false; // track No click
+
 /* --- No Button Behavior --- */
 const noTexts = ["No", "HUH🥱😒"];
+
+noBtn.addEventListener('click', () => {
+    noClicked = true;
+    moveNoButton();
+});
 
 function moveNoButton() {
     const container = document.querySelector('.container');
@@ -174,22 +209,10 @@ function moveNoButton() {
     noBtn.style.left = x + "px";
     noBtn.style.top = y + "px";
 
+    // toggle text each click
     const randomText = noTexts[Math.floor(Math.random() * noTexts.length)];
     noBtn.textContent = randomText;
 }
-
-/* Mouse hover / touch */
-noBtn.addEventListener('mouseover', moveNoButton);
-noBtn.addEventListener('touchstart', moveNoButton);
-
-/* Auto move + toggle text every 1 sec until Yes clicked */
-let noInterval = setInterval(()=>{
-    if (!proposalContent.classList.contains('hidden')) {
-        moveNoButton();
-    } else {
-        clearInterval(noInterval);
-    }
-}, 1000);
 
 /* --- Slideshow --- */
 const slides = document.querySelectorAll(".slideshow img");
@@ -200,6 +223,43 @@ setInterval(()=>{
     index = (index + 1) % slides.length;
     slides[index].classList.add("active");
 },2000);
+
+/* --- Background Hearts Animation --- */
+const heartsCanvas = document.getElementById('heartsCanvas');
+const hctx = heartsCanvas.getContext('2d');
+heartsCanvas.width = window.innerWidth;
+heartsCanvas.height = window.innerHeight;
+
+const hearts = [];
+for(let i=0;i<50;i++){
+    hearts.push({
+        x: Math.random()*heartsCanvas.width,
+        y: Math.random()*heartsCanvas.height,
+        size: Math.random()*20 + 10,
+        speed: Math.random()*1 + 0.5,
+        alpha: Math.random()*0.5 + 0.5
+    });
+}
+
+function drawHearts(){
+    hctx.clearRect(0,0,heartsCanvas.width,heartsCanvas.height);
+    hearts.forEach(h => {
+        hctx.fillStyle = `rgba(255,0,128,${h.alpha})`;
+        hctx.beginPath();
+        hctx.moveTo(h.x, h.y);
+        hctx.bezierCurveTo(h.x, h.y - h.size/2, h.x - h.size/2, h.y - h.size, h.x, h.y - h.size);
+        hctx.bezierCurveTo(h.x + h.size/2, h.y - h.size, h.x, h.y - h.size/2, h.x, h.y);
+        hctx.fill();
+
+        h.y -= h.speed;
+        if(h.y < -20){
+            h.y = heartsCanvas.height + 20;
+            h.x = Math.random()*heartsCanvas.width;
+        }
+    });
+    requestAnimationFrame(drawHearts);
+}
+drawHearts();
 
 /* --- Yes Button Click --- */
 yesBtn.addEventListener('click', ()=>{
@@ -255,6 +315,7 @@ function launchConfettiAndFireworks(){
   setInterval(createFirework, 800);
 
   /* Animation Loop */
+  const startTime = Date.now();
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -299,13 +360,12 @@ function launchConfettiAndFireworks(){
     }
     ctx.globalAlpha = 1;
 
-    requestAnimationFrame(draw);
+    if(Date.now() - startTime < 33000){ // 33 sec effect
+        requestAnimationFrame(draw);
+    }
   }
 
   draw();
-
-  /* Remove canvas after 12 sec */
-  setTimeout(()=>{canvas.remove();},12000);
 }
 </script>
 
